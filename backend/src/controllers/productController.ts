@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { db } from '../database/connection'
 
-// GET /produtos (aceitar ?q= para busca por nome, ex: whereILike igual ao exemplo de /users)
+// GET /produtos
 export const getProducts = async (req: Request, res: Response) => {
     try {
         const q = String(req.query.q || '').trim()
@@ -21,7 +21,7 @@ export const getProducts = async (req: Request, res: Response) => {
     }
 }
 
-// GET /produtos/:id
+// GET /produtos/:id 
 export const getProductById = async (req: Request, res: Response) => {
     try {
         const { id } = req.params
@@ -39,7 +39,7 @@ export const getProductById = async (req: Request, res: Response) => {
     }
 }
 
-// POST /produtos
+// POST /produtos 
 export const createProduct = async (req: Request, res: Response) => {
     try {
         const { nome, descricao, preco, quantidade } = req.body
@@ -66,7 +66,7 @@ export const createProduct = async (req: Request, res: Response) => {
     }
 }
 
-// PUT /produtos/:id
+// PUT /produtos/:id 
 export const updateProduct = async (req: Request, res: Response) => {
     try {
         const { id } = req.params
@@ -77,6 +77,11 @@ export const updateProduct = async (req: Request, res: Response) => {
         if (descricao !== undefined) payload.descricao = descricao
         if (preco !== undefined) payload.preco = Number(preco)
         if (quantidade !== undefined) payload.quantidade = Number(quantidade)
+
+       
+        if (Object.keys(payload).length === 0) {
+            return res.status(400).json({ message: 'Nenhum dado válido para atualização foi fornecido.' })
+        }
 
         const updated = await db('produtos').where({ id: Number(id) }).update(payload)
 
@@ -93,7 +98,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     }
 }
 
-// DELETE /produtos/:id
+// DELETE /produtos/:id 
 export const deleteProduct = async (req: Request, res: Response) => {
     try {
         const { id } = req.params
