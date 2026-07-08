@@ -1,117 +1,92 @@
 import { Request, Response } from 'express'
 import { db } from '../database/connection'
 
-// GET /produtos
+// GET /produtos (aceitar ?q= para busca por nome, ex: whereILike igual ao exemplo de /users)
 export const getProducts = async (req: Request, res: Response) => {
-    try {
-        const q = String(req.query.q || '').trim()
+    const { q } = req.query
 
-        let query = db('produtos').select('*').orderBy('id', 'desc')
-
-        if (q.length) {
-            query = query.whereILike('nome', `%${q}%`)
-        }
-
-        const products = await query
-
-        return res.status(200).json({ data: products })
-    } catch (error) {
-        console.error(error)
-        return res.status(500).json({ message: 'Erro ao buscar produtos.' })
+    // Dica: usar req.query.q para filtrar por nome (whereILike)
+    if (q) {
+        const busca = await db('produtos').whereILike('nome', `%${q}%`)
+        return res.status(200).json({ message: "Dados consultados com sucesso", data: busca })
     }
+
+    // TODO: buscar todos os produtos na tabela `produtos`
+    const query = await db('produtos')
+
+
+    return res.status(200).json({ message: "Dados consultados com sucesso", data: query })
 }
 
-// GET /produtos/:id 
+// GET /produtos/:id
 export const getProductById = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params
+    // TODO: buscar um produto pelo id (req.params.id)
+    const { id } = req.params
 
-        const product = await db('produtos').where({ id: Number(id) }).first()
+    const query = await db('produtos').where({ id })
 
-        if (!product) {
-            return res.status(404).json({ message: 'Produto não encontrado.' })
-        }
-
-        return res.status(200).json({ data: product })
-    } catch (error) {
-        console.error(error)
-        return res.status(500).json({ message: 'Erro ao buscar produto.' })
+    if (query.length == 0) {
+        return res.status(400).json({ message: "Produto não encontrado !" })
     }
+
+    return res.status(200).json({ message: "Consulta realizada com sucesso !", data: query })
 }
 
-// POST /produtos 
+// POST /produtos
 export const createProduct = async (req: Request, res: Response) => {
-    try {
-        const { nome, descricao, preco, quantidade } = req.body
+    // TODO: inserir um novo produto (req.body: nome, descricao, preco, quantidade)
 
-        if (!nome || preco === undefined) {
-            return res.status(400).json({ message: 'Nome e preco são obrigatórios.' })
-        }
+    const { body } = req
 
-        const insertPayload: any = {
-            nome,
-            descricao: descricao || null,
-            preco: Number(preco) || 0,
-            quantidade: Number(quantidade) || 0
-        }
 
-        const [id] = await db('produtos').insert(insertPayload)
+    const { nome, descricao, preco, quantidade } = body
 
-        const product = await db('produtos').where({ id }).first()
+    const query = await db('produtos').insert({
+        nome,
+        descricao,
+        preco,
+        quantidade
+    })
 
-        return res.status(201).json({ data: product })
-    } catch (error) {
-        console.error(error)
-        return res.status(500).json({ message: 'Erro ao criar produto.' })
-    }
+    return res.status(200).json({
+        message: "Produto cadastrado com sucesso !",
+        data: body
+    })
 }
 
-// PUT /produtos/:id 
+// PUT /produtos/:id
 export const updateProduct = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params
-        const { nome, descricao, preco, quantidade } = req.body
+    // TODO: atualizar um produto existente (req.params.id + req.body)
+    const { body, params: { id } } = req
 
-        const payload: any = {}
-        if (nome !== undefined) payload.nome = nome
-        if (descricao !== undefined) payload.descricao = descricao
-        if (preco !== undefined) payload.preco = Number(preco)
-        if (quantidade !== undefined) payload.quantidade = Number(quantidade)
+    const { nome, descricao, preco, quantidade } = body
 
-       
-        if (Object.keys(payload).length === 0) {
-            return res.status(400).json({ message: 'Nenhum dado válido para atualização foi fornecido.' })
-        }
+    const query = await db('produtos').update({
+        nome,
+        descricao,
+        preco,
+        quantidade
+    }).where({ id })
 
-        const updated = await db('produtos').where({ id: Number(id) }).update(payload)
-
-        if (!updated) {
-            return res.status(404).json({ message: 'Produto não encontrado.' })
-        }
-
-        const product = await db('produtos').where({ id: Number(id) }).first()
-
-        return res.status(200).json({ data: product })
-    } catch (error) {
-        console.error(error)
-        return res.status(500).json({ message: 'Erro ao atualizar produto.' })
+    if (!query) {
+        return res.status(400).json({ message: "Produto não encontrado !" })
     }
+
+    res.status(200).json({ message: "Dados atualizados com sucesso !" })
+    // Se não encontrar, retornar 404
 }
 
-// DELETE /produtos/:id 
+// DELETE /produtos/:id
 export const deleteProduct = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params
+    // TODO: remover um produto pelo id (req.params.id)
+    const { id } = req.params
 
-        const deleted = await db('produtos').where({ id: Number(id) }).del()
+    const query = await db('produtos').where({ id }).del()
 
-        if (!deleted) {
-            return res.status(404).json({ message: 'Produto não encontrado.' })
-        }
-
-        return res.status(200).json({ message: 'Produto removido com sucesso.' })
-    } catch (error) {
-        console.error(error)
-        return res.status(500).json({ message: 'Erro ao remover produto.' })
+    if (!query) {
+        return res.status(400).json({ message: "Produto não encontrado !" })
     }
+
+    return res.status(200).json({ message: "Dados excluídos com sucesso !" })
+    // Se não encontrar, retornar 404
 }
