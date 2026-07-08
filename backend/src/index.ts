@@ -59,7 +59,7 @@ app.get('/users', (req, res) => {
 
 const schemaCreateProduct = z.object({
     nome: z.string('Cara eu só aceito string').min(3, 'Mínimo 3 caracteres.'),
-    descricao: z.string().min(3, 'Mínimo 3 caracteres.'),
+    descricao: z.optional(z.string().min(3, 'Mínimo 3 caracteres.')),
     preco: z.number().min(0, 'Preço deve ser maior ou igual a 0.'),
     quantidade: z.optional(z.number().min(0, 'Quantidade deve ser maior ou igual a 0.'))
 })
